@@ -1,22 +1,18 @@
 package com.mulganov.job.kotlin
 
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Bundle
-import android.view.Menu
-import android.view.MenuItem
 import android.view.View
-import android.widget.ListView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.mulganov.job.kotlin.list.MainAdaptor
 import com.mulganov.job.kotlin.list.Product
 import com.mulganov.job.kotlin.rest.Category
 import com.mulganov.job.kotlin.rest.NetworkService
 import com.mulganov.job.kotlin.rest.Post
-import retrofit2.Call
-import retrofit2.Callback
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileNotFoundException
 
 class Load : AppCompatActivity() {
@@ -100,7 +96,8 @@ class Load : AppCompatActivity() {
         for (product in products){
             write("Синхронизация ресурсов:\n" + i + "/" + (products.size-1))
             try {
-                product.bitmap = BitmapFactory.decodeFile(product.url)
+//                Assets.addBitmapToMemoryCache(product.url, Assets.loadImageFromAsset(File(product.url)))
+                product.bitmap = decodeFile(File(product.url)) as Bitmap
             }catch (ex: Exception){
                 product.bitmap = BitmapFactory.decodeResource(resources, R.mipmap.ic_xz)
                 println("Error: index: " + product.url.replace(filesDir.absolutePath+ "/", ""))
@@ -167,5 +164,28 @@ class Load : AppCompatActivity() {
         super.onResume()
     }
 
+
+    fun decodeFile(f: File): Bitmap? {
+        try { // Decode image size
+            val o = BitmapFactory.Options()
+            o.inJustDecodeBounds = true
+            BitmapFactory.decodeStream(FileInputStream(f), null, o)
+            // The new size we want to scale to
+            val REQUIRED_SIZE = 70
+            // Find the correct scale value. It should be the power of 2.
+            var scale = 1
+            while (o.outWidth / scale / 2 >= REQUIRED_SIZE &&
+                o.outHeight / scale / 2 >= REQUIRED_SIZE
+            ) {
+                scale *= 2
+            }
+            // Decode with inSampleSize
+            val o2 = BitmapFactory.Options()
+            o2.inSampleSize = scale
+            return BitmapFactory.decodeStream(FileInputStream(f), null, o2)
+        } catch (e: FileNotFoundException) {
+        }
+        return null
+    }
 }
 
